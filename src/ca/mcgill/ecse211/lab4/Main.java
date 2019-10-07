@@ -58,7 +58,7 @@ public class Main {
       // Start navigation thread.
 
 
-    } else { // Navigation w/ avoidance has been selected, so we include an ultrasonic thread as well.
+    } else { // Rising edge has been selected
       LCD.clear();
 
       // Declaring ultrasonic and controller variables.

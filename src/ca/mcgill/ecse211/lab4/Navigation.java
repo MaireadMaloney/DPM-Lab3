@@ -1,130 +1,199 @@
 package ca.mcgill.ecse211.lab4;
 
-import java.util.ArrayList;
 import ca.mcgill.ecse211.lab4.Odometer;
 import ca.mcgill.ecse211.lab4.UltrasonicPoller;
+import lejos.hardware.Sound;
+import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 
+
 public class Navigation extends Thread {
+  private static final double NAVIGATION_EPSILON = 0.25;
+  // Motor speed constants
+  private static final int MOTOR_STRAIGHT = 200;
+  // Motors (left and right)
+  private final EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
+  private final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("D"));
+  // Odometer instance
+  private final Odometer odometer;
+  // Properties for thread control and command execution
+  private final Object condition = new Object();
+  private volatile boolean navigating = false;
+  private volatile Runnable command = null;
+  private volatile Thread runner = null;
 
-  private EV3LargeRegulatedMotor leftMotor;
-  private EV3LargeRegulatedMotor rightMotor;
-  /**
-   * Speed of wheels during forward movement in deg/s.
-   */
-  private static final int FORWARD_SPEED = 250;
-  /**
-   * Speed of wheel during rotation toward new waypoint in deg/s.
-   */
-  private static final int ROTATE_SPEED = 150;
-  private final double WHEEL_RAD;
-  private final double WHEEL_BASE;
-  private final double TILE_SIZE;
-
-  private Odometer odometer;
-  private double x, y, theta;
-  private boolean isNavigating;
-
-  private ArrayList<double[]> coordsList;
-
-  public Navigation(Odometer odo, EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor,
-      final double WHEEL_RAD, final double WHEEL_BASE, double tileSize) {
-
-    this.odometer = odo;
-    this.leftMotor = leftMotor;
-    this.rightMotor = rightMotor;
-    this.WHEEL_RAD = WHEEL_RAD;
-    this.WHEEL_BASE = WHEEL_BASE;
-    this.TILE_SIZE = tileSize;
-    this.isNavigating = false;
-    this.coordsList = new ArrayList<double[]>();
-
+  public Navigation(Odometer odometer) {
+      this.odometer = odometer;
   }
 
- 
-
-
-  boolean boolTravelTo(double navX, double navY) {
-
-  
-    // Get current coordinates.
-    theta = odometer.getXYT()[2];
-    x = odometer.getXYT()[0];
-    y = odometer.getXYT()[1];
-
-
-    double deltaX = navX - x;
-    double deltaY = navY - y;
-
-    // Get absolute values of deltas.
-    double absDeltaX = Math.abs(deltaX);
-    double absDeltaY = Math.abs(deltaY);
-
-    // Need to convert theta from degrees to radians.
-    double deltaTheta = Math.atan2(deltaX, deltaY) / Math.PI * 180;
-
-    // Turn to the correct direction.
-    this.turnTo(theta, deltaTheta);
-    // Move until destination is reached.
-    // While loop is used in case of collision override.
-    leftMotor.setSpeed(FORWARD_SPEED);
-    rightMotor.setSpeed(FORWARD_SPEED);
-    leftMotor.forward();
-    rightMotor.forward();
-    return true;
+  public void run() {
+      // Register the current thread as the runner, so we can interrupt it
+      runner = Thread.currentThread();
+      while (true) {
+          // Wait util a command is sent
+          while (command == null) {
+              try {
+                  synchronized (condition) {
+                      // Set navigation to false and start waiting
+                      navigating = false;
+                      condition.wait();
+                  }
+              } catch (InterruptedException ignored) {
+              }
+          }
+          // Get the command and remove it
+          Runnable c = command;
+          command = null;
+          // Execute it
+          c.run();
+      }
   }
 
-
-  // This method causes the robot to turn (on point) to the absolute heading theta. This method
-  // will turn a MINIMAL angle to its target.
-  /**
-   * Turns the robot to the absolute (minimal) heading theta
-   * 
-   * @param currTheta current theta
-   * @param destTheta to turn robot by
-   */
-  void turnTo(double currTheta, double destTheta) {
-    // get theta difference
-    double deltaTheta = destTheta - currTheta;
-    // normalize theta (get minimum value)
-    deltaTheta = normalizeAngle(deltaTheta);
-
-    leftMotor.setSpeed(ROTATE_SPEED);
-    rightMotor.setSpeed(ROTATE_SPEED);
-
-    leftMotor.rotate(convertAngle(WHEEL_RAD, WHEEL_BASE, deltaTheta), true);
-    rightMotor.rotate(-convertAngle(WHEEL_RAD, WHEEL_BASE, deltaTheta), false);
+  // Travel by a relative amount
+  public void travelBy(double x, double y) {
+      Odometer.Position pos = odometer.getPosition();
+      travelTo(pos.x + x, pos.y + y);
   }
 
-  // Getting the minimum angle to turn:
-  // It is easier to turn +90 than -270
-  // Also, it is easier to turn -90 than +270
-  double normalizeAngle(double theta) {
-    if (theta <= -180) {
-      theta += 360;
-    } else if (theta > 180) {
-      theta -= 360;
-    }
-    return theta;
+  // Travel to aboslute coordinates
+  public void travelTo(double x, double y) {
+      command = new Travel(x, y);
+      startCommand();
   }
 
-
-  boolean isNavigating() {
-    return isNavigating;
+  // Turn by relative angle
+  public void turnBy(double theta) {
+      turnTo(odometer.getTheta() + theta);
   }
 
-  /**
-   * This method allows the conversion of a distance to the total rotation of each wheel need to cover that distance.
-   * 
-   * @param radius
-   * @param distance
-   * @return
-   */
-  private static int convertDistance(double radius, double distance) {
-    return (int) ((180.0 * distance) / (Math.PI * radius));
+  // Turn to aboslute angle
+  public void turnTo(double theta) {
+      command = new Turn(theta);
+      startCommand();
   }
 
-  private static int convertAngle(double radius, double width, double angle) {
-    return convertDistance(radius, Math.PI * width * angle / 360.0);
+  // Return true if robot is navigating (command is under execution)
+  public boolean isNavigating() {
+      return navigating;
+  }
+
+  // Wait until navigation is over
+  public void waitUntilDone() {
+      while (navigating) {
+          Thread.yield();
+      }
+  }
+
+  // Abort any navigation in progess
+  public void abort() {
+      if (navigating) {
+          runner.interrupt();
+      }
+  }
+
+  // Starts a navigation command
+  private void startCommand() {
+      if (navigating) {
+          // Interrupt it running
+          runner.interrupt();
+      } else {
+          // Else set navigation stet and notify runner
+          synchronized (condition) {
+              navigating = true;
+              condition.notify();
+          }
+      }
+  }
+
+  private void doTravel(double x, double y) {
+      // Set motor speds
+      leftMotor.setSpeed(MOTOR_STRAIGHT);
+      rightMotor.setSpeed(MOTOR_STRAIGHT);
+      // Find turn angle
+      double differenceX = x - odometer.getX();
+      double differenceY = y - odometer.getY();
+      // Do turn
+      doTurn(Math.atan2(differenceY, differenceX));
+      // Set motors forward
+      leftMotor.forward();
+      rightMotor.forward();
+      // Main loop
+      while (true) {
+          // check for thread interruption, aka command abort
+          if (interrupted()) {
+              // end early
+              break;
+          }
+          // Check for target reached
+          differenceX = x - odometer.getX();
+          differenceY = y - odometer.getY();
+          if (differenceX * differenceX + differenceY * differenceY < NAVIGATION_EPSILON * NAVIGATION_EPSILON) {
+              break;
+          }
+      }
+      // complete command
+      endCommand();
+  }
+
+  private void doTurn(double theta) {
+      // Set motor speeds
+      leftMotor.setSpeed(MOTOR_STRAIGHT);
+      rightMotor.setSpeed(MOTOR_STRAIGHT);
+      // Find min angle difference
+      double difference = theta - odometer.getTheta();
+      if (difference >= Math.PI) {
+          difference = -2 * Math.PI + difference;
+      } else if (difference <= -Math.PI) {
+          difference = 2 * Math.PI + difference;
+      }
+      // Compute wheel rotation in angle
+      double wheelRotation = (difference * Odometer.WHEEL_DISTANCE / Odometer.WHEEL_RADIUS) / 2;
+      int rotationDegrees = (int) Math.round(Math.toDegrees(wheelRotation));
+      // Rotate
+      leftMotor.rotate(-rotationDegrees, true);
+      rightMotor.rotate(rotationDegrees, true);
+      // Wait for completion
+      while (leftMotor.isMoving() || rightMotor.isMoving()) {
+          // check for thread interruption, aka command abort
+          if (interrupted()) {
+              // end early
+              endCommand();
+              break;
+          }
+      }
+  }
+
+  private void endCommand() {
+      // Stop travel
+      leftMotor.stop(true);
+      rightMotor.stop(false);
+      Sound.playNote(Sound.FLUTE, 440, 250);
+  }
+
+  // A command to travel to absolute coordinates
+  private class Travel implements Runnable {
+      private final double x, y;
+
+      private Travel(double x, double y) {
+          this.x = x;
+          this.y = y;
+      }
+
+      public void run() {
+          doTravel(x, y);
+      }
+  }
+
+  // A command to rotate to an absolute angle
+  private class Turn implements Runnable {
+      private final double theta;
+
+      private Turn(double theta) {
+          this.theta = Odometer.wrapAngle(theta);
+      }
+
+      public void run() {
+          doTurn(theta);
+      }
   }
 }

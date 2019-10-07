@@ -23,7 +23,6 @@ public class Main {
 
     Display odometryDisplay = new Display(lcd); // No need to change.
     Navigation navigator = new Navigation(odometer, leftMotor, rightMotor, WHEEL_RAD, TRACK, TILE_SIZE);
-
     do {
       // Clear the display.
       lcd.clear();

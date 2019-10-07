@@ -2,7 +2,8 @@
 package ca.mcgill.ecse211.lab4;
 
 import java.util.concurrent.locks.Condition;
-
+import lejos.hardware.*;
+import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 // static import to avoid duplicating variables and make the code easier to read
@@ -19,241 +20,120 @@ import static ca.mcgill.ecse211.lab4.Resources.*;
  * @author Younes Boubekeur
  */
 
-public class Odometer implements Runnable {
+public class Odometer extends Thread {
+    // odometer update period, in ms
+    private static final long PERIOD = 25;
+    public static final double WHEEL_RADIUS = 2.05;
+    public static final double WHEEL_DISTANCE = 14.9;
+    private static final double TWO_PI = Math.PI * 2;
+    // robot position
+    private double x = 0, y = 0, theta = Math.PI / 2;
+    // Tachometer last readings in radians, for right and left
+    private double lastRho = 0, lastLambda = 0;
+    // lock object for mutual exclusion
+    private final Object lock = new Object();
+    // Left and right motors
 
-  /**
-   * The x-axis position in cm.
-   */
-  private volatile double x;
-
-  /**
-   * The y-axis position in cm.
-   */
-  private volatile double y; // y-axis position
-
-  /**
-   * The orientation in degrees.
-   */
-  private volatile double theta; // Head angle
-
-  // Thread control tools
-  /**
-   * Fair lock for concurrent writing
-   */
-  private static Lock lock = new ReentrantLock(true);
-
-  /**
-   * Indicates if a thread is trying to reset any position parameters
-   */
-  private volatile boolean isResetting = false;
-
-  /**
-   * Lets other threads know that a reset operation is over.
-   */
-  private Condition doneResetting = lock.newCondition();
-
-  private static Odometer odo; // Returned as singleton
-
-  // Motor-related variables
-  private static int leftMotorTachoCount = 0;
-  private static int rightMotorTachoCount = 0;
-
-  /**
-   * The odometer update period in ms.
-   */
-  private static final long ODOMETER_PERIOD = 25;
-
-
-  /**
-   * This is the default constructor of this class. It initiates all motors and variables once.It cannot be accessed
-   * externally.
-   */
-  private Odometer() {
-    setXYT(30.48, 30.48, 0);
-  }
-
-  /**
-   * Returns the Odometer Object. Use this method to obtain an instance of Odometer.
-   * 
-   * @return the Odometer Object
-   */
-  public synchronized static Odometer getOdometer() {
-    if (odo == null) {
-      odo = new Odometer();
-    }
-
-    return odo;
-  }
-
-  /**
-   * This method is where the logic for the odometer will run.
-   */
-  public void run() {
-    long updateStart, updateEnd;
-
-
-    while (true) {
-      updateStart = System.currentTimeMillis();
-      int newLeftMotorTachoCount, newRightMotorTachoCount;
-
-      newLeftMotorTachoCount = leftMotor.getTachoCount();
-      newRightMotorTachoCount = rightMotor.getTachoCount();
-
-
-      double distL, distR, deltaDisplacement, deltaTheta, dX, dY;
-
-      distL = Math.PI * WHEEL_RAD * (newLeftMotorTachoCount - leftMotorTachoCount) / 180; // Distance for L in radians.
-      distR = Math.PI * WHEEL_RAD * (newRightMotorTachoCount - rightMotorTachoCount) / 180; // Distance for R in
-                                                                                            // radians.
-
-
-
-      leftMotorTachoCount = newLeftMotorTachoCount;
-      rightMotorTachoCount = newRightMotorTachoCount;
-
-      deltaDisplacement = 0.5 * (distL + distR); // in radians
-      deltaTheta = (distL - distR) / TRACK; // in radians
-      dX = deltaDisplacement * Math.sin(deltaTheta + Math.toRadians(theta)); // Needs to be in radians.
-      dY = deltaDisplacement * Math.cos(deltaTheta + Math.toRadians(theta));
-
-      odo.update(dX, dY, Math.toDegrees(deltaTheta)); // Update odometer values with new calculated values.
-
-
-      // This ensures that the odometer only runs once every period.
-      updateEnd = System.currentTimeMillis();
-      if (updateEnd - updateStart < ODOMETER_PERIOD) {
-        try {
-          Thread.sleep(ODOMETER_PERIOD - (updateEnd - updateStart));
-        } catch (InterruptedException e) {
-          // There is nothing to be done.
+    public void run() {
+        long updateStart, updateEnd;
+        // reset motor tachos
+        rightMotor.resetTachoCount();
+        leftMotor.resetTachoCount();
+        //
+        while (true) {
+            updateStart = System.currentTimeMillis();
+            // compute rho and lambda
+            double rho = Math.toRadians(rightMotor.getTachoCount());
+            double lambda = Math.toRadians(leftMotor.getTachoCount());
+            // compute the delta rho and lambda from last values
+            double deltaRho = rho - lastRho;
+            double deltaLambda = lambda - lastLambda;
+            // update last values to current
+            lastRho = rho;
+            lastLambda = lambda;
+            // multiply rho and lambda by the wheel radius
+            double deltaRhoRadius = deltaRho * WHEEL_RADIUS;
+            double deltaLambdaRadius = deltaLambda * WHEEL_RADIUS;
+            // compute delta C
+            double deltaC = (deltaRhoRadius + deltaLambdaRadius) / 2;
+            // compute delta theta and it's half
+            double deltaTheta = (deltaRhoRadius - deltaLambdaRadius) / WHEEL_DISTANCE;
+            double halfDeltaTheta = deltaTheta / 2;
+            // compute delta x and y, using y forward and a right handed system (x right)
+            double deltaX = deltaC * Math.cos(theta + halfDeltaTheta);
+            double deltaY = deltaC * Math.sin(theta + halfDeltaTheta);
+            // update position
+            synchronized (lock) {
+                // update x, y, and theta by their deltas
+                x += deltaX;
+                y += deltaY;
+                theta = wrapAngle(theta + deltaTheta);
+            }
+            // this ensures that the odometer only runs once every period
+            updateEnd = System.currentTimeMillis();
+            if (updateEnd - updateStart < PERIOD) {
+                try {
+                    Thread.sleep(PERIOD - (updateEnd - updateStart));
+                } catch (InterruptedException e) {
+                    // there is nothing to be done here because it is not
+                    // expected that the odometer will be interrupted by
+                    // another thread
+                }
+            }
         }
-      }
-    }
-  }
-
-  // IT IS NOT NECESSARY TO MODIFY ANYTHING BELOW THIS LINE
-
-  /**
-   * Returns the Odometer data.
-   * <p>
-   * Writes the current position and orientation of the robot onto the odoData array. {@code odoData[0] =
-   * x, odoData[1] = y; odoData[2] = theta;}
-   * 
-   * @param position the array to store the odometer data
-   * @return the odometer data.
-   */
-  public double[] getXYT() {
-    double[] position = new double[3];
-    lock.lock();
-    try {
-      while (isResetting) { // If a reset operation is being executed, wait until it is over.
-        doneResetting.await(); // Using await() is lighter on the CPU than simple busy wait.
-      }
-
-      position[0] = x;
-      position[1] = y;
-      position[2] = theta;
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } finally {
-      lock.unlock();
     }
 
-    return position;
-  }
-
-  /**
-   * Adds dx, dy and dtheta to the current values of x, y and theta, respectively. Useful for odometry.
-   * 
-   * @param dx
-   * @param dy
-   * @param dtheta
-   */
-  public void update(double dx, double dy, double dtheta) {
-    lock.lock();
-    isResetting = true;
-    try {
-      x += dx;
-      y += dy;
-      theta = (theta + (360 + dtheta) % 360) % 360; // keeps the updates within 360 degrees
-      isResetting = false;
-      doneResetting.signalAll(); // Let the other threads know we are done resetting
-    } finally {
-      lock.unlock();
+    public double getX() {
+        synchronized (lock) {
+            return x;
+        }
     }
 
-  }
-
-  /**
-   * Overrides the values of x, y and theta. Use for odometry correction.
-   * 
-   * @param x the value of x
-   * @param y the value of y
-   * @param theta the value of theta in degrees
-   */
-  public void setXYT(double x, double y, double theta) {
-    lock.lock();
-    isResetting = true;
-    try {
-      this.x = x;
-      this.y = y;
-      this.theta = theta;
-      isResetting = false;
-      doneResetting.signalAll();
-    } finally {
-      lock.unlock();
+    public double getY() {
+        synchronized (lock) {
+            return y;
+        }
     }
-  }
 
-  /**
-   * Overwrites x. Use for odometry correction.
-   * 
-   * @param x the value of x
-   */
-  public void setX(double x) {
-    lock.lock();
-    isResetting = true;
-    try {
-      this.x = x;
-      isResetting = false;
-      doneResetting.signalAll();
-    } finally {
-      lock.unlock();
+    public double getTheta() {
+        synchronized (lock) {
+            return theta;
+        }
     }
-  }
 
-  /**
-   * Overwrites y. Use for odometry correction.
-   * 
-   * @param y the value of y
-   */
-  public void setY(double y) {
-    lock.lock();
-    isResetting = true;
-    try {
-      this.y = y;
-      isResetting = false;
-      doneResetting.signalAll();
-    } finally {
-      lock.unlock();
+    public Position getPosition() {
+        synchronized (lock) {
+            return new Position(x, y, theta);
+        }
     }
-  }
 
-  /**
-   * Overwrites theta. Use for odometry correction.
-   * 
-   * @param theta the value of theta
-   */
-  public void setTheta(double theta) {
-    lock.lock();
-    isResetting = true;
-    try {
-      this.theta = theta;
-      isResetting = false;
-      doneResetting.signalAll();
-    } finally {
-      lock.unlock();
+    public void setTheta(double theta) {
+        synchronized (lock) {
+            this.theta = theta;
+        }
     }
-  }
 
+    public void setPosition(double x, double y, double theta) {
+        synchronized (lock) {
+            this.x = x;
+            this.y = y;
+            this.theta = theta;
+        }
+    }
+
+    // Wraps an angle between 0 (inclusive) and 2pi (exclusive)
+    public static double wrapAngle(double rads) {
+        return ((rads % TWO_PI) + TWO_PI) % TWO_PI;
+    }
+
+    // Represents a position with a heading
+    public static class Position {
+        public final double x, y, theta;
+
+        public Position(double x, double y, double theta) {
+            this.x = x;
+            this.y = y;
+            this.theta = theta;
+        }
+    }
 }

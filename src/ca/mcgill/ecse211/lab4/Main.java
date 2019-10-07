@@ -31,17 +31,20 @@ public class Main {
       // Ask the user whether the motors should drive in a square or float.
       lcd.drawString("< Left | Right >", 0, 0);
       lcd.drawString("       |        ", 0, 1);
-      lcd.drawString("Simple | with  ", 0, 2);
-      lcd.drawString("navig. | avoid-   ", 0, 3);
-      lcd.drawString("       | ance ", 0, 4);
+      lcd.drawString("Falling| Rising ", 0, 2);
+      lcd.drawString("Edge   | Edge  ", 0, 3);
+      lcd.drawString("       |     ", 0, 4);
 
       buttonChoice = Button.waitForAnyPress(); // Record the user's choice (left or right press).
     }
 
     while (buttonChoice != Button.ID_LEFT && buttonChoice != Button.ID_RIGHT);
 
-    if (buttonChoice == Button.ID_LEFT) { // Simple navigation has been selected.
+    if (buttonChoice == Button.ID_LEFT) { // Falling edge has been selected.
 
+   // Declaring ultrasonic and controller variables.
+      UltrasonicPoller usPoller = UltrasonicPoller.getInstance();
+ 
       // Start odometer thread.
       Thread odoThread = new Thread(odometer);
       odoThread.start();
@@ -53,8 +56,6 @@ public class Main {
    
 
       // Start navigation thread.
-      Thread navigatorThread = new Thread(navigator);
-      navigatorThread.start();
 
 
     } else { // Navigation w/ avoidance has been selected, so we include an ultrasonic thread as well.
@@ -62,6 +63,9 @@ public class Main {
 
       // Declaring ultrasonic and controller variables.
       UltrasonicPoller usPoller = UltrasonicPoller.getInstance();
+   // Start ultrasonic thread.
+      Thread ultrasonicThread = new Thread(usPoller);
+      ultrasonicThread.start();
 
       // Start odometer thread.
       Thread odoThread = new Thread(odometer);
@@ -80,8 +84,6 @@ public class Main {
 
 
       // Start navigation thread.
-      Thread navigatorThread = new Thread(navigator);
-      navigatorThread.start();
 
     }
 

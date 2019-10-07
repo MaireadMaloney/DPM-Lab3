@@ -12,10 +12,13 @@ public class LightLocalizer {
   private final Navigation navig;
   private final EV3ColorSensor ls;
   private boolean lineDetected = false;
+  private float sampleData[] = new float [1];
+  private float brightness;
 
   public LightLocalizer(Odometer odo, Navigation navig, EV3ColorSensor ls) {
-   ls.setCurrentMode("Ambient");
-    SensorMode lightLevel = ls.getAmbientMode();
+   ls.getRedMode().fetchSample(sampleData, 0);
+   brightness = sampleData[0];
+   
     //NEED HELP HERE NOT SURE HOW TO CONVERT THIS
     //
     //look at original code for reference
@@ -74,12 +77,11 @@ public class LightLocalizer {
 
   // Returns true if a line has been crossed since last call
   private boolean lineCrossed() {
-    
-      // Check for line detected
-      boolean newLineDetected =  <= LINE_LIGHT;
-      // Only report a rising edge
-      boolean crossed = !lineDetected && newLineDetected;
-      lineDetected = newLineDetected;
-      return crossed;
+ // Check for line detected
+    boolean newLineDetected = (brightness <= LINE_LIGHT);
+    // Only report a rising edge
+    boolean crossed = !lineDetected && newLineDetected;
+    lineDetected = newLineDetected;
+    return crossed;
   }
 }

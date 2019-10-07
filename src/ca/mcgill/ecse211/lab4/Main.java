@@ -4,6 +4,7 @@ package ca.mcgill.ecse211.lab4;
 import lejos.hardware.Button;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.TextLCD;
+import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.robotics.SampleProvider;
 import static ca.mcgill.ecse211.lab4.Resources.*;
 
@@ -16,13 +17,17 @@ public class Main {
   // Minimum distance to send to poller.
   public static final double MIN_DISTANCE = 14.0;
   public static final TextLCD lcd = LocalEV3.get().getTextLCD();
+  private static Odometer odo;
+  private static Navigation navig;
+  private static EV3UltrasonicSensor us;
 
   public static void main(String[] args) {
     int buttonChoice;
 
 
     Display odometryDisplay = new Display(lcd); // No need to change.
-    Navigation navigator = new Navigation(odometer, leftMotor, rightMotor, WHEEL_RAD, TRACK, TILE_SIZE);
+    Navigation navigator = new Navigation(odometer);
+    
     do {
       // Clear the display.
       lcd.clear();
@@ -51,17 +56,22 @@ public class Main {
       // Start display thread.
       Thread odoDisplayThread = new Thread(odometryDisplay);
       odoDisplayThread.start();
+      
+      UltrasonicLocalizer usl = new UltrasonicLocalizer(odometer, navig, us, UltrasonicLocalizer.LocalizationType.FALLING_EDGE);
+      usl.doLocalization();
 
-   
+  
 
-      // Start navigation thread.
-
-
-    } else { // Rising edge has been selected
+    } else { // Rising edge has been selected 
       LCD.clear();
 
       // Declaring ultrasonic and controller variables.
       UltrasonicPoller usPoller = UltrasonicPoller.getInstance();
+      
+      //localizer instance, rising edge
+      UltrasonicLocalizer usl = new UltrasonicLocalizer(odometer, navig, us, UltrasonicLocalizer.LocalizationType.RISING_EDGE);
+      usl.doLocalization();
+      
    // Start ultrasonic thread.
       Thread ultrasonicThread = new Thread(usPoller);
       ultrasonicThread.start();
@@ -69,14 +79,13 @@ public class Main {
       // Start odometer thread.
       Thread odoThread = new Thread(odometer);
       odoThread.start();
+      
 
       // Start display thread.
       Thread odoDisplayThread = new Thread(odometryDisplay);
       odoDisplayThread.start();
       //
-      // Start ultrasonic thread.
-      Thread ultrasonicThread = new Thread(usPoller);
-      ultrasonicThread.start();
+      
 
       // Set up navigation points.
  

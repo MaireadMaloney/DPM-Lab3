@@ -17,8 +17,12 @@ public class UltrasonicLocalizer {
   private final LocalizationType locType;
   private int farPingCount = 0;
   private int lastValidDistance = 255;
+  private int distance;
+  private float[] usData;
+
 
   public UltrasonicLocalizer(Odometer odo, Navigation navig, EV3UltrasonicSensor us, LocalizationType locType) {
+      
       this.odo = odo;
       this.navig = navig;
       this.us = us;
@@ -28,6 +32,7 @@ public class UltrasonicLocalizer {
    }
 
   public void doLocalization() {
+         
       if (locType == LocalizationType.FALLING_EDGE) {
           // rotate the robot until it sees no wall
           rotateToNoWall(-1);
@@ -67,13 +72,15 @@ public class UltrasonicLocalizer {
   }
 
   private void rotateToWall(double direction) {
+      us.fetchSample(usData, 0); // acquire data
+      distance = (int) (usData[0] * 100.0); // extract from buffer, cast to int
       boolean foundWall = false;
       direction = Math.signum(direction) * 0.9 * Math.PI;
       do {
           // turn the maximum amount
           navig.turnBy(direction);
           // wait until a wall isn't found or navigation is done
-          while (!(foundWall = getFilteredData() <= WALL_THRESHOLD) && navig.isNavigating());
+          while (!(foundWall = getFilteredData(distance) <= WALL_THRESHOLD) && navig.isNavigating());
       } while (!foundWall);
       // make sure that navigation is stopped
       navig.abort();
@@ -82,11 +89,13 @@ public class UltrasonicLocalizer {
   private void rotateToNoWall(double direction) {
       boolean foundWall = false;
       direction = Math.signum(direction) * 0.9 * Math.PI;
+      us.fetchSample(usData, 0); // acquire data
+      distance = (int) (usData[0] * 100.0); // extract from buffer, cast to int
       do {
           // turn the maximum amount
           navig.turnBy(direction);
           // wait until a wall isn't found or navigation is done
-          while ((foundWall = getFilteredData() <= WALL_THRESHOLD) && navig.isNavigating());
+          while ((foundWall = getFilteredData(distance) <= WALL_THRESHOLD) && navig.isNavigating());
       } while (foundWall);
       // make sure that navigation is stopped
       navig.abort();
@@ -98,16 +107,16 @@ public class UltrasonicLocalizer {
       return Math.abs(Math.acos(Math.cos(a) * Math.cos(b) + Math.sin(a) * Math.sin(b)));
   }
 
-  private int getFilteredData() {
+  private int getFilteredData(int distance) {
       // do a ping
-      us.ping();
+      Sound.beep();
       // wait for the ping to complete
       try {
           Thread.sleep(50);
       } catch (InterruptedException e) {
       }
       // there will be a delay here
-      int distance = us.getDistance();
+      //int distance = us.getDistance();
       // Check for nothing found
       if (distance == 255) {
           // If nothing found for a while, return that

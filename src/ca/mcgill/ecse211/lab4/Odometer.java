@@ -6,6 +6,7 @@ import lejos.hardware.*;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import ca.mcgill.ecse211.lab4.Odometer;
 // static import to avoid duplicating variables and make the code easier to read
 import static ca.mcgill.ecse211.lab4.Resources.*;
 
@@ -30,9 +31,26 @@ public class Odometer extends Thread {
     private double x = 0, y = 0, theta = Math.PI / 2;
     // Tachometer last readings in radians, for right and left
     private double lastRho = 0, lastLambda = 0;
-    // lock object for mutual exclusion
-    private final Object lock = new Object();
+    
+    // Thread control tools
+    /**
+     * Fair lock for concurrent writing
+     */
+    private static Lock lock = new ReentrantLock(true);
+
+    /**
+     * Indicates if a thread is trying to reset any position parameters
+     */
+    private volatile boolean isResetting = false;
+
+    /**
+     * Lets other threads know that a reset operation is over.
+     */
+    private Condition doneResetting = lock.newCondition();
+    
     // Left and right motors
+    private static Odometer odo; // Returned as singleton
+
 
     public void run() {
         long updateStart, updateEnd;
@@ -136,4 +154,39 @@ public class Odometer extends Thread {
             this.theta = theta;
         }
     }
+    
+    public double[] getXYT() {
+      double[] position = new double[3];
+      lock.lock();
+      try {
+        while (isResetting) { // If a reset operation is being executed, wait until it is over.
+          doneResetting.await(); // Using await() is lighter on the CPU than simple busy wait.
+        }
+
+        position[0] = x;
+        position[1] = y;
+        position[2] = theta;
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      } finally {
+        lock.unlock();
+      }
+
+      return position;
+    }
+
+    /**
+     * Returns the Odometer Object. Use this method to obtain an instance of Odometer.
+     * 
+     * @return the Odometer Object
+     */
+    public synchronized static Odometer getOdometer() {
+      if (odo == null) {
+        odo = new Odometer();
+      }
+
+      return odo;
+    }
+
+   
 }

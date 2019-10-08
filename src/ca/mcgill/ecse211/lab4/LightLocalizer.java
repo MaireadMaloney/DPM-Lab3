@@ -1,9 +1,6 @@
 package ca.mcgill.ecse211.lab4;
 
 import lejos.hardware.sensor.EV3ColorSensor;
-import lejos.hardware.sensor.SensorMode;
-import lejos.robotics.Color;
-import lejos.robotics.localization.*;
 public class LightLocalizer {
 //Max light value reading for a grid line
   private static final int LINE_LIGHT = 500;
@@ -18,11 +15,6 @@ public class LightLocalizer {
   public LightLocalizer(Odometer odo, Navigation navig, EV3ColorSensor ls) {
    ls.getRedMode().fetchSample(sampleData, 0);
    brightness = sampleData[0];
-   
-    //NEED HELP HERE NOT SURE HOW TO CONVERT THIS
-    //
-    //look at original code for reference
-    //
       this.odo = odo;
       this.navig = navig;
       this.ls = ls;

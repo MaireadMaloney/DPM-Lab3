@@ -1,6 +1,9 @@
 package ca.mcgill.ecse211.lab4;
 
 import static ca.mcgill.ecse211.lab4.Resources.*;
+import ca.mcgill.ecse211.lab3.BangBangController;
+import ca.mcgill.ecse211.lab4.UltrasonicPoller;
+import lejos.robotics.SampleProvider;
 
 /**
  * Samples the US sensor and invokes the selected controller on each cycle.
@@ -10,11 +13,15 @@ import static ca.mcgill.ecse211.lab4.Resources.*;
  * the thread sleeps for 50 ms at the end of each loop, then one cycle through the loop is approximately 70 ms. This
  * corresponds to a sampling rate of 1/70ms or about 14 Hz.
  */
+
+
 public class UltrasonicPoller implements Runnable {
 
   private UltrasonicController controller;
   private float[] usData;
   public int distance;
+  private static UltrasonicPoller ultraSPollInst;
+
 
   public UltrasonicPoller() {
     usData = new float[US_SENSOR.sampleSize()];
@@ -39,9 +46,17 @@ public class UltrasonicPoller implements Runnable {
     }
   }
 
+
   public static UltrasonicPoller getInstance() {
-    // TODO Auto-generated method stub
-    return null;
+    return ultraSPollInst;
   }
+  
+//  public static UltrasonicPoller getInstance(SampleProvider us, float[] usData, UltrasonicLocalizer cont,
+//      final double MIN_DISTANCE) {
+//    if (ultraSPollInst == null) {
+//      ultraSPollInst = new UltrasonicPoller(us, usData, cont, MIN_DISTANCE);
+//    }
+//    return ultraSPollInst;
+//  }
 
 }

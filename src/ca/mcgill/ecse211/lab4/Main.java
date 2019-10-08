@@ -58,9 +58,10 @@ public class Main {
       odoThread.start();
       Thread odoDisplayThread = new Thread(odometryDisplay);
       odoDisplayThread.start();
-      // Start display thread.
-      //Thread odoDisplayThread = new Thread(odo);
-      //odoDisplayThread.start();
+      
+      Thread ultrasonicThread = new Thread(usPoller);
+      ultrasonicThread.start();
+      
       
       UltrasonicLocalizer usl = new UltrasonicLocalizer(odo, navig, US_SENSOR, UltrasonicLocalizer.LocalizationType.FALLING_EDGE);
       usl.doLocalization();

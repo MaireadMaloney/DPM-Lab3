@@ -3,7 +3,7 @@ package ca.mcgill.ecse211.lab4;
 import lejos.hardware.sensor.EV3ColorSensor;
 public class LightLocalizer {
 //Max light value reading for a grid line
-  private static final int LINE_LIGHT = 500;
+  private static final int LINE_LIGHT = 26;
   private static final double LIGHT_SENSOR_DISTANCE = 11.5;
   private final Odometer odo;
   private final Navigation navig;
@@ -14,7 +14,7 @@ public class LightLocalizer {
 
   public LightLocalizer(Odometer odo, Navigation navig, EV3ColorSensor ls) {
    ls.getRedMode().fetchSample(sampleData, 0);
-   brightness = sampleData[0];
+   brightness = sampleData[0]*100;
       this.odo = odo;
       this.navig = navig;
       this.ls = ls;

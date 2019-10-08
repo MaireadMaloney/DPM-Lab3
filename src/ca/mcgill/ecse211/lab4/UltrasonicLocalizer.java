@@ -1,6 +1,7 @@
 package ca.mcgill.ecse211.lab4;
-
+import ca.mcgill.ecse211.lab4.UltrasonicController;
 import ca.mcgill.ecse211.lab4.Odometer;
+import ca.mcgill.ecse211.lab4.UltrasonicPoller;
 import static ca.mcgill.ecse211.lab4.Resources.*;
 import lejos.hardware.*;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
@@ -47,7 +48,9 @@ public class UltrasonicLocalizer {
           double angle = getAngleDiff(angleB, angleA) / 2 + angleA;
           // update the odometer orientation
           odo.setTheta(odo.getTheta() - Math.PI / 4 - angle);
-      } else {
+      }
+      
+      else {
           // rotate the robot until it sees a wall
           rotateToWall(-1);
           // keep rotating until the robot sees no wall, then latch the angle
@@ -105,6 +108,11 @@ public class UltrasonicLocalizer {
       // Convert to vectors and use dot product to compute angle in between
       return Math.abs(Math.acos(Math.cos(a) * Math.cos(b) + Math.sin(a) * Math.sin(b)));
   }
+  
+  
+  public int readUSDistance() {
+    return this.distance;
+  }
 
   private int getFilteredData(int distance) {
       // do a ping
@@ -118,6 +126,8 @@ public class UltrasonicLocalizer {
       //int distance = us.getDistance();
       // Check for nothing found
       if (distance == 255) {
+        this.distance = distance;
+
           // If nothing found for a while, return that
           if (farPingCount >= FAR_PING_THRESHOLD) {
               return 255;
@@ -126,7 +136,9 @@ public class UltrasonicLocalizer {
               farPingCount++;
               return lastValidDistance;
           }
-      } else if (farPingCount > 0) {
+      } 
+      
+      else if (farPingCount > 0) {
           // If something found decrement nothing found count (min zero)
           farPingCount--;
       }

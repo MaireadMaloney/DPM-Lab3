@@ -36,7 +36,6 @@ public class Display extends Thread {
   }
 
   public void run() {
-    usPoller = UltrasonicPoller.getInstance();
     lcd.clear();
 
     long updateStart, updateEnd;
@@ -57,9 +56,6 @@ public class Display extends Thread {
       lcd.drawString("T: " + numberFormat.format(position[2]), 0, 2);
 
 
-      if (usPoller != null) { // Shows US sensor reading for object distance.
-        lcd.drawString("Distance: " + numberFormat.format(usPoller.distance), 0, 3);
-      }
 
 
       // This ensures that the data is updated only once every period.

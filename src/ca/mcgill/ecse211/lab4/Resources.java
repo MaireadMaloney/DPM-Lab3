@@ -33,12 +33,12 @@ public class Resources {
   /**
    * The speed at which the robot moves forward in degrees per second.
    */
-  public static final int FORWARD_SPEED = 150;
+  public static final int FORWARD_SPEED = 100;
 
   /**
    * The speed at which the robot rotates in degrees per second.
    */
-  public static final int ROTATE_SPEED = 150;
+  public static final int ROTATE_SPEED = 100;
 
   /**
    * The motor acceleration in degrees per second squared.
@@ -75,6 +75,10 @@ public class Resources {
   public static final int MOTOR_HIGH = 150;
 
   public static final int FILTER_OUT = 20;
+  
+  public static final int distanceEdge = 30;
+  public static final int toEdge = 3;
+  
   /**
    * The LCD screen used for displaying text.
    */
@@ -109,5 +113,8 @@ public class Resources {
    * The odometer.
    */
   public static Odometer odometer = Odometer.getOdometer();
+  //public static Navigation navigator = Navigation.getNavigation();
+  public static Navigation navigator = new Navigation(odometer, leftMotor, rightMotor, WHEEL_RAD, TRACK, TILE_SIZE);
+
 
 }

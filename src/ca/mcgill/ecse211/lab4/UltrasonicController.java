@@ -44,4 +44,10 @@ public abstract class UltrasonicController {
     }
   }
 
+
+  public void doLocalization(int distance) {
+    // TODO Auto-generated method stub
+    
+  }
+
 }

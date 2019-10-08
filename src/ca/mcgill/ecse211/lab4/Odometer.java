@@ -174,6 +174,27 @@ public class Odometer extends Thread {
 
       return position;
     }
+    /**
+     * Overrides the values of x, y and theta. Use for odometry correction.
+     * 
+     * @param x the value of x
+     * @param y the value of y
+     * @param theta the value of theta in degrees
+     */
+    public void setXYT(double x, double y, double theta) {
+      lock.lock();
+      isResetting = true;
+      try {
+        this.x = x;
+        this.y = y;
+        this.theta = theta;
+        isResetting = false;
+        doneResetting.signalAll();
+      } finally {
+        lock.unlock();
+      }
+    }
+
 
     /**
      * Returns the Odometer Object. Use this method to obtain an instance of Odometer.

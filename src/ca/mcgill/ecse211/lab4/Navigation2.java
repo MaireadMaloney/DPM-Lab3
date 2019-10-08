@@ -1,12 +1,11 @@
 package ca.mcgill.ecse211.lab4;
 
-
 import java.util.ArrayList;
 import ca.mcgill.ecse211.lab4.Odometer;
 import ca.mcgill.ecse211.lab4.UltrasonicPoller;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 
-public class Navigation extends Thread {
+public class Navigation2 extends Thread {
 
   private EV3LargeRegulatedMotor leftMotor;
   private EV3LargeRegulatedMotor rightMotor;
@@ -28,7 +27,7 @@ public class Navigation extends Thread {
 
   private ArrayList<double[]> coordsList;
 
-  public Navigation(Odometer odo, EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor,
+  public Navigation2(Odometer odo, EV3LargeRegulatedMotor leftMotor, EV3LargeRegulatedMotor rightMotor,
       final double WHEEL_RAD, final double WHEEL_BASE, double tileSize) {
 
     this.odometer = odo;
@@ -49,7 +48,6 @@ public class Navigation extends Thread {
    * @param navY coordinate of position
    */
   void travelTo(double navX, double navY) {
-    System.out.println("called");
     this.coordsList.add(new double[] {navX * TILE_SIZE, navY * TILE_SIZE});
   }
 
@@ -63,7 +61,11 @@ public class Navigation extends Thread {
 
   boolean boolTravelTo(double navX, double navY) {
 
-    
+//    UltrasonicPoller usPoller = null;
+//    if (UltrasonicPoller.
+//      getInstance() != null) {
+//      usPoller = UltrasonicPoller.getInstance();
+//    }
 
     // Get current coordinates.
     theta = odometer.getXYT()[2];
@@ -104,6 +106,28 @@ public class Navigation extends Thread {
         break;
       }
 
+      // This is only relevant if the ultrasonic poller thread is being used.
+//      if (usPoller != null) {
+//        if (usPoller.isInitializing) { // isInitializing is true when the distance is too close.
+//          leftMotor.stop(true);
+//          rightMotor.stop(false);
+//          usPoller.init(navX, navY);
+//
+//          try {
+//            synchronized (usPoller.doneAvoiding) {
+//              while (usPoller.isAvoiding) { // Checking if thread is paused by another thread
+//                usPoller.doneAvoiding.wait();
+//              }
+//            }
+//          } catch (InterruptedException e) {
+//            e.printStackTrace();
+//          }
+//
+//          this.coordsList.add(0, new double[] {navX, navY});
+//
+//          return false;
+//        }
+//      }
 
       try {
         Thread.sleep(20);
@@ -172,4 +196,3 @@ public class Navigation extends Thread {
     return convertDistance(radius, Math.PI * width * angle / 360.0);
   }
 }
-

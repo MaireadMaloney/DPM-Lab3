@@ -2,11 +2,14 @@ package ca.mcgill.ecse211.lab4;
 
 
 import lejos.hardware.Button;
+
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.lcd.TextLCD;
+import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.robotics.SampleProvider;
 import static ca.mcgill.ecse211.lab4.Resources.*;
+
 
 
 public class Main {
@@ -16,21 +19,23 @@ public class Main {
   //public static final float[] usData = new float[usDistance.sampleSize()];
 
   // Minimum distance to send to poller.
+  private static EV3ColorSensor colorSensor = Resources.colorSensor;  //private SampleProvider intensityVal = colorSensor.getRedMode();
   public static final double MIN_DISTANCE = 14.0;
   public static final TextLCD lcd = LocalEV3.get().getTextLCD();
   //private static Odometer odo;
   //private static Navigation navig;
-  //private static EV3UltrasonicSensor us;
+  public static UltrasonicLocalizer usl;
+  public static LightLocalizer2 lsl;
+  private static Navigation navigator = Resources.navigator;
+
 
   public static void main(String[] args) {
     int buttonChoice;
     Odometer odo = new Odometer();
-    odo.start();
+    
     Display odometryDisplay = new Display(lcd); // No need to change.
 
-    
-    Navigation navig = new Navigation(odo);
-    navig.start();
+  
      
     do {
       // Clear the display.
@@ -51,7 +56,6 @@ public class Main {
     if (buttonChoice == Button.ID_LEFT) { // Falling edge has been selected.
       lcd.clear();
    // Declaring ultrasonic and controller variables.
-      UltrasonicPoller usPoller = UltrasonicPoller.getInstance();
  
       // Start odometer thread.
       Thread odoThread = new Thread(odo);
@@ -59,12 +63,22 @@ public class Main {
       Thread odoDisplayThread = new Thread(odometryDisplay);
       odoDisplayThread.start();
       
-      Thread ultrasonicThread = new Thread(usPoller);
-      ultrasonicThread.start();
+      //new Thread(new UltrasonicPoller()).start();
+      Thread navigatorThread = new Thread(navigator);
+      navigatorThread.start();
       
+      usl = new UltrasonicLocalizer(odo, navigator, US_SENSOR, UltrasonicLocalizer.LocalizationType.FALLING_EDGE); 
+      Thread uslThread = new Thread(usl);
+      uslThread.start();
       
-      UltrasonicLocalizer usl = new UltrasonicLocalizer(odo, navig, US_SENSOR, UltrasonicLocalizer.LocalizationType.FALLING_EDGE);
-      usl.doLocalization();
+      Button.waitForAnyPress();
+      
+      LightLocalizer2 lsl = new LightLocalizer2(odo, navigator, colorSensor);
+      Thread lslThread = new Thread(lsl);
+      lslThread.start();
+      
+      Button.waitForAnyPress();
+      System.exit(0);
 
   
 
@@ -72,22 +86,30 @@ public class Main {
       LCD.clear();
 
       // Declaring ultrasonic and controller variables.
-      UltrasonicPoller usPoller = UltrasonicPoller.getInstance();
-      
+      //new Thread(new UltrasonicPoller()).start();
+
       //localizer instance, rising edge
-      UltrasonicLocalizer usl = new UltrasonicLocalizer(odometer, navig, US_SENSOR, UltrasonicLocalizer.LocalizationType.RISING_EDGE);
-      usl.doLocalization();
+      //usl.doLocalization();
       Thread odoDisplayThread = new Thread(odometryDisplay);
       odoDisplayThread.start();
    // Start ultrasonic thread.
-      Thread ultrasonicThread = new Thread(usPoller);
-      ultrasonicThread.start();
+      
 
       // Start odometer thread.
       Thread odoThread = new Thread(odo);
       odoThread.start();
+    //new Thread(new UltrasonicPoller()).start();
+      navigator.start();
       
+      usl = new UltrasonicLocalizer(odo, navigator, US_SENSOR, UltrasonicLocalizer.LocalizationType.RISING_EDGE);
+      
+      Thread uslThread = new Thread(usl);
+      uslThread.start();
 
+      Button.waitForAnyPress();
+      // perform the light sensor localization
+      lsl = new LightLocalizer2(odo, navigator, colorSensor);
+      //lsl.doLocalization();
       // Start display thread.
       //Thread odoDisplayThread = new Thread(odometryDisplay);
       //odoDisplayThread.start();

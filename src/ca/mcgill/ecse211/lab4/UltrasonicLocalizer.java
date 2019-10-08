@@ -27,8 +27,6 @@ public class UltrasonicLocalizer {
       this.navig = navig;
       this.us = us;
       this.locType = locType;
-      // switch off the ultrasonic sensor
-      us.setCurrentMode("off");
    }
 
   public void doLocalization() {
@@ -72,8 +70,8 @@ public class UltrasonicLocalizer {
   }
 
   private void rotateToWall(double direction) {
-      us.fetchSample(usData, 0); // acquire data
-      distance = (int) (usData[0] * 100.0); // extract from buffer, cast to int
+      //us.fetchSample(usData, 1); // acquire data
+    //  distance = (int) (usData[0] * 100.0); // extract from buffer, cast to int
       boolean foundWall = false;
       direction = Math.signum(direction) * 0.9 * Math.PI;
       do {
@@ -87,16 +85,17 @@ public class UltrasonicLocalizer {
   }
 
   private void rotateToNoWall(double direction) {
-      boolean foundWall = false;
-      direction = Math.signum(direction) * 0.9 * Math.PI;
-      us.fetchSample(usData, 0); // acquire data
-      distance = (int) (usData[0] * 100.0); // extract from buffer, cast to int
-      do {
+   // us.fetchSample(usData, 1); // acquire data 
+    boolean foundWall = false;
+    direction = Math.signum(direction) * 0.9 * Math.PI;
+    //distance = (int) (usData[1] * 100.0); // extract from buffer, cast to int
+    do {
           // turn the maximum amount
-          navig.turnBy(direction);
+        navig.turnBy(direction);
           // wait until a wall isn't found or navigation is done
-          while ((foundWall = getFilteredData(distance) <= WALL_THRESHOLD) && navig.isNavigating());
-      } while (foundWall);
+        while ((foundWall = getFilteredData(distance) <= WALL_THRESHOLD) && navig.isNavigating());
+      }
+    while (foundWall);
       // make sure that navigation is stopped
       navig.abort();
   }
@@ -109,7 +108,7 @@ public class UltrasonicLocalizer {
 
   private int getFilteredData(int distance) {
       // do a ping
-      Sound.beep();
+     // Sound.beep();
       // wait for the ping to complete
       try {
           Thread.sleep(50);

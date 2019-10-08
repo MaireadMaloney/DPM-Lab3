@@ -5,6 +5,7 @@ import ca.mcgill.ecse211.lab4.UltrasonicPoller;
 import lejos.hardware.Sound;
 import lejos.hardware.ev3.LocalEV3;
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
+import ca.mcgill.ecse211.lab4.Resources;
 
 
 public class Navigation extends Thread {
@@ -12,8 +13,8 @@ public class Navigation extends Thread {
   // Motor speed constants
   private static final int MOTOR_STRAIGHT = 200;
   // Motors (left and right)
-  private final EV3LargeRegulatedMotor leftMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("A"));
-  private final EV3LargeRegulatedMotor rightMotor = new EV3LargeRegulatedMotor(LocalEV3.get().getPort("D"));
+  private final EV3LargeRegulatedMotor leftMotor = Resources.leftMotor;
+  private final EV3LargeRegulatedMotor rightMotor = Resources.rightMotor;
   // Odometer instance
   private final Odometer odometer;
   // Properties for thread control and command execution

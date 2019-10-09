@@ -73,7 +73,7 @@ public class Main {
       
       Button.waitForAnyPress();
       
-      LightLocalizer2 lsl = new LightLocalizer2(odo, navigator, colorSensor);
+      LightLocalizer2 lsl = new LightLocalizer2();
       Thread lslThread = new Thread(lsl);
       lslThread.start();
       

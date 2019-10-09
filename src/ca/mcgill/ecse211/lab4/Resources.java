@@ -19,7 +19,7 @@ public class Resources {
   /**
    * The wheel radius in centimeters.
    */
-  public static final double WHEEL_RAD = 2.10;
+  public static final double WHEEL_RAD = 2.15;
   /*
    * For the poller instance
    */
@@ -28,7 +28,7 @@ public class Resources {
   /**
    * The robot width in centimeters.
    */
-  public static final double TRACK = 11.60;
+  public static final double TRACK = 11.3;
 
   /**
    * The speed at which the robot moves forward in degrees per second.
@@ -113,6 +113,10 @@ public class Resources {
    * The odometer.
    */
   public static Odometer odometer = Odometer.getOdometer();
+  
+  /**
+   * The navigator
+   */
   
   public static Navigation navigator = new Navigation(odometer, leftMotor, rightMotor, WHEEL_RAD, TRACK, TILE_SIZE);
   

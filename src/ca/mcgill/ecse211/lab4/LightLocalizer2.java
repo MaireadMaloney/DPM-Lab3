@@ -5,6 +5,8 @@ import static ca.mcgill.ecse211.lab4.Resources.*;
 import static ca.mcgill.ecse211.lab4.Resources.WHEEL_RAD;
 import static ca.mcgill.ecse211.lab4.Resources.leftMotor;
 import static ca.mcgill.ecse211.lab4.Resources.rightMotor;
+import java.util.Timer;
+import java.util.TimerTask;
 import lejos.hardware.Sound;
 import lejos.hardware.sensor.EV3ColorSensor;
 
@@ -15,8 +17,8 @@ public class LightLocalizer2 implements Runnable{
   private Navigation navigator = Resources.navigator;
   private EV3ColorSensor colorSensor = Resources.colorSensor;
   private boolean lineNotReached = true;
+  private Timer timer;
  
-  
 //
 //  public LightLocalizer2(Odometer odo, Navigation navigator, EV3ColorSensor colorSensor) {
 //   
@@ -32,7 +34,8 @@ public class LightLocalizer2 implements Runnable{
   
   @Override
   public void run() {
-    Sound.beep();
+
+    //rotate the vehicle 45 degrees, so it faces the point (1,1)
     leftMotor.setSpeed(ROTATE_SPEED);
     rightMotor.setSpeed(ROTATE_SPEED);
     int angle = 45;
@@ -40,48 +43,44 @@ public class LightLocalizer2 implements Runnable{
     rightMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, angle), false);
         
     while(lineNotReached) {
-      System.out.println("entered loop");
+      //fetch samples from light sensor
       colorSensor.getRedMode().fetchSample(sampleData, 0);
       brightness = sampleData[0]*100;
       
+      
+      //set vehicle moving forward
       leftMotor.setSpeed(FORWARD_SPEED);
       rightMotor.setSpeed(FORWARD_SPEED);
       leftMotor.forward();
       rightMotor.forward();
       
       
-      
-      if(brightness<26.00) {
-        System.out.println("reached line");
+      //when it reaches a black line, stop it
+      if(brightness<22.00) {
         lineNotReached = false;
         leftMotor.stop();
         rightMotor.stop();
-        
+       
       }
+
     }
-    int lineCounter= 0;
     
-    rightMotor.setSpeed(FORWARD_SPEED);
-    rightMotor.forward();
+  //rotate the vehicle 45 degrees, so it faces the point (1,1)
+    leftMotor.setSpeed(ROTATE_SPEED);
+    rightMotor.setSpeed(ROTATE_SPEED);
+    int angle2 = 45;
+    leftMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, angle2), true);
+    rightMotor.rotate(convertAngle(WHEEL_RAD, TRACK, angle2), false);
+
+
     
-    while(lineCounter!=5) {
-      colorSensor.getRedMode().fetchSample(sampleData, 0);
-      brightness = sampleData[0]*100;
-      if(brightness<26.00) {
-        lineCounter++;
-        try {
-          Thread.sleep(400);
-        } catch (InterruptedException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
-        }
-      }
-    }   
-    //rightMotor.(-convertAngle(WHEEL_RAD, TRACK, 0), false);
-    rightMotor.stop();
   }
 
+    
+  }
+
+
   
   
 
-}
+

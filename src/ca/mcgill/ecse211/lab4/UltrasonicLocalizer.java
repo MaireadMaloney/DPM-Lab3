@@ -12,174 +12,25 @@ public class UltrasonicLocalizer implements Runnable {
 
   private static final int WALL_THRESHOLD = 40;
   private static final int FAR_PING_THRESHOLD = 3;
-  private final Odometer odo;
-  private final Navigation navig;
-  private final EV3UltrasonicSensor us;
-  private final LocalizationType locType;
-  private int farPingCount = 0;
-  private int lastValidDistance = 255;
-  private int distance;
+  private int correctionAngle=168;
   
   private float[] usData = new float[US_SENSOR.sampleSize()];
+  private static LocalizationType locType;
 
 
-  public UltrasonicLocalizer(Odometer odo, Navigation navig, EV3UltrasonicSensor us, LocalizationType locType) {
-      
-      this.odo = odo;
-      this.navig = navig;
-      this.us = us;
-      this.locType = locType;
-   }
-  //convert distance
-  //convert angle
-  
-  
-//  @Override
-//  public void processUSData(int distance) {
-//    filter(distance);
-//
-//    // TODO: process a movement based on the us distance passed in (BANG-BANG style)
-//  }
-//
-//  @Override
-//  public int readUSDistance() {
-//    return this.distance;
-//  }
+  public UltrasonicLocalizer(LocalizationType localType) {
+    locType = localType;
+    // TODO Auto-generated constructor stub
+  }
 
 
-//  public void doLocalization() {
-//         
-//      if (locType == LocalizationType.FALLING_EDGE) {
-//          // rotate the robot until it sees no wall
-//          rotateToNoWall(-1);
-//          // keep rotating until the robot sees a wall, then latch the angle
-//          rotateToWall(-1);
-//          double angleA = odo.getTheta();
-//          // switch direction and wait until it sees no wall
-//          rotateToNoWall(1);
-//          // keep rotating until the robot sees a wall, then latch the angle
-//          rotateToWall(1);
-//          double angleB = odo.getTheta();
-//          // angleA is clockwise from angleB, so assume the average of the
-//          // angles to the right of angleB is 45 degrees past 'north'
-//          double angle = getAngleDelta(angleB, angleA);
-//          // update the odometer orientation
-//          odo.setTheta(odo.getTheta() - Math.PI / 4 - angle);
-//          System.out.println("done");
-//      }
-//      
-//      else {
-//          // rotate the robot until it sees a wall
-//          rotateToWall(-1);
-//          // keep rotating until the robot sees no wall, then latch the angle
-//          rotateToNoWall(-1);
-//          double angleA = odo.getTheta();
-//          // switch direction and wait until it sees a wall
-//          rotateToWall(1);
-//          // keep rotating until the robot sees no wall, then latch the angle
-//          rotateToNoWall(1);
-//          double angleB = odo.getTheta();
-//          // angleA is clockwise from angleB, so assume the average of the
-//          // angles to the right of angleB is 225 degrees past 'north'
-//          double angle = getAngleDiff(angleB, angleA) / 2 + angleA;
-//          // update the odometer orientation
-//          odo.setTheta(odo.getTheta() + Math.PI / 4 - angle);
-//      }
-//      // Turn to zero to verify results
-//      navig.turnTo(0);
-//      navig.waitUntilDone();
-//  }
-//  
-//
-//  private void rotateToWall(double direction) {
-//      //us.fetchSample(usData, 1); // acquire data
-//    //  distance = (int) (usData[0] * 100.0); // extract from buffer, cast to int
-//      int distance = fetchUSData();
-//      boolean foundWall = false;
-//      direction = Math.signum(direction) * 0.9 * Math.PI;
-//      do {
-//          // turn the maximum amount
-//          navig.turnBy(direction);
-//          System.out.println(distance);
-//
-//          // wait until a wall isn't found or navigation is done
-//          while (!(foundWall = getFilteredData(distance) <= WALL_THRESHOLD) && navig.isNavigating());
-//      } while (!foundWall);
-//      // make sure that navigation is stopped
-//      navig.abort();
-//  }
-//
-//  private void rotateToNoWall(double direction) {
-//   // us.fetchSample(usData, 1); // acquire data 
-//    int distance = fetchUSData();
-//
-//    boolean foundWall = false;
-//    direction = Math.signum(direction) * 0.9 * Math.PI;
-//    //distance = (int) (usData[1] * 100.0); // extract from buffer, cast to int
-//    do {
-//          // turn the maximum amount
-//        navig.turnBy(direction);
-//          // wait until a wall isn't found or navigation is done
-//        System.out.println(distance);
-//        while ((foundWall = (getFilteredData(distance) <= WALL_THRESHOLD)) && navig.isNavigating());
-//      }
-//    while (foundWall);
-//      // make sure that navigation is stopped
-//      navig.abort();
-//  }
-//
-//  // Get the absolute difference between two angles
+
+
   public static double getAngleDiff(double a, double b) {
       // Convert to vectors and use dot product to compute angle in between
       return Math.abs(Math.acos(Math.cos(a) * Math.cos(b) + Math.sin(a) * Math.sin(b)));
   }
-//  // Get the absolute difference between two angles
-//  public static double getAngleDelta(double a, double b) {
-//      // Convert to vectors and use dot product to compute angle in between
-//    double angle;
-//    if(a<b) {
-//      angle = 45-((a+b)/2);
-//    }
-//    else {
-//      angle = 225-((a+b)/2);
-//    }
-//    return angle;
-//  }
-//  
-//
-//  private int getFilteredData(int distance) {
-//      // do a ping
-//     // Sound.beep();
-//      // wait for the ping to complete
-//      try {
-//          Thread.sleep(50);
-//      } catch (InterruptedException e) {
-//      }
-//      // there will be a delay here
-//      //int distance = us.getDistance();
-//      // Check for nothing found
-//      if (distance == 255) {
-//        this.distance = distance;
-//
-//          // If nothing found for a while, return that
-//          if (farPingCount >= FAR_PING_THRESHOLD) {
-//              return 255;
-//          } else {
-//              // Else add to the count and return last valid
-//              farPingCount++;
-//              return lastValidDistance;
-//          }
-//      } 
-//      
-//      else if (farPingCount > 0) {
-//          // If something found decrement nothing found count (min zero)
-//          farPingCount--;
-//      }
-//      // Set last valid distance to this one
-//      lastValidDistance = distance;
-//      // Return the distance
-//      return distance;
-//  }
+
   
   private int fetchUSData() {
     US_SENSOR.fetchSample(usData, 0);
@@ -205,31 +56,36 @@ public class UltrasonicLocalizer implements Runnable {
   private static int convertAngle(double radius, double width, double angle) {
     return convertDistance(radius, Math.PI * width * angle / 360.0);
   }
-  
+  /**
+   * Falling Edge method
+   */
   private void fallingEdge() {
     double angle1;
     double angle2;
     double deltaTheta=0;
-    double turnAngle;
     
     leftMotor.setSpeed(100);
     rightMotor.setSpeed(100);
 
-    
+
+    //if distance is smaller than d + noise (toEdge), turn towards the wall
     while(fetchUSData() < distanceEdge + toEdge) {
       leftMotor.backward();
       rightMotor.forward();
     
     }
     
+    //turn towards wall again if distance is greater than d, detected falling edge
     while(fetchUSData() > distanceEdge) {
       leftMotor.backward();
       rightMotor.forward();
     }
     
-    angle1 = odo.getXYT()[2];
+    //record first angle, represents alpha
+    angle1 = odometer.getXYT()[2];
     Sound.beep();
 
+    //now turn other way and look for second falling edge
     while(fetchUSData() < distanceEdge + toEdge) {
       leftMotor.forward();
       rightMotor.backward();
@@ -237,32 +93,41 @@ public class UltrasonicLocalizer implements Runnable {
     
     }
     
+    //turn away, look for second falling edge
     while(fetchUSData() > distanceEdge) {
       leftMotor.forward();
       rightMotor.backward();
      
     }
     
-    angle2 = odo.getXYT()[2];
+    //record second angle measured, represents beta
+    angle2 = odometer.getXYT()[2];
     Sound.beep();
 
     
+    //compare angles from each wall, find deltaTheta based on which is bigger
     if(angle1 < angle2) {
-      deltaTheta = 30-((angle1+angle2)/2);
+      deltaTheta = 45-((angle1+angle2)/2);
+      deltaTheta+=correctionAngle; //without correctionAngle it goes to 0 degrees facing the wrong way, correctionAngle turns it back forwards
       
     }
     
     else if(angle1 > angle2) {
-      deltaTheta = 210-((angle1+angle2)/2);
+      deltaTheta = 215-((angle1+angle2)/2);
     }
     
-    deltaTheta+=odo.getXYT()[2];
+    //add change in angle needed to current angle
+    deltaTheta+=odometer.getXYT()[2];
     
-
+    //rotate accordingly
     leftMotor.rotate(convertAngle(WHEEL_RAD, TRACK, deltaTheta), true);
     rightMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, deltaTheta), false);
 
   }
+  
+  /**
+   * Rising Edge method
+   */
   private void risingEdge() {
     double angle1;
     double angle2;
@@ -272,11 +137,13 @@ public class UltrasonicLocalizer implements Runnable {
     leftMotor.setSpeed(100);
     rightMotor.setSpeed(100);
 
+    //check if us sensor detects wall farther away than d, if yes, turn towards wall
     while(fetchUSData() > distanceEdge) {
       leftMotor.backward();
       rightMotor.forward();
     }
     
+    //if closer to wall than d+noise, turn towards wall
     while(fetchUSData() < distanceEdge + toEdge) {
       leftMotor.backward();
       rightMotor.forward();
@@ -284,10 +151,10 @@ public class UltrasonicLocalizer implements Runnable {
     }
     
    
+    //record first angle, alpha
+    angle1 = odometer.getXYT()[2];
     
-    angle1 = odo.getXYT()[2];
-    Sound.beep();
-    
+    //perform turns in other direction to get the second angle
     while(fetchUSData() > distanceEdge) {
       leftMotor.forward();
       rightMotor.backward();
@@ -298,26 +165,28 @@ public class UltrasonicLocalizer implements Runnable {
       leftMotor.forward();
       rightMotor.backward();
       
-    
     }
     
   
+    //record the second angle, beta
+    angle2 = odometer.getXYT()[2];
     
-    angle2 = odo.getXYT()[2];
-    Sound.beep();
-    
-    
+    //compare angles from each wall, find deltaTheta based on which is bigger
     if(angle1 < angle2) {
-      deltaTheta = 30-((angle1+angle2)/2);
+      deltaTheta = 45-((angle1+angle2)/2);
+      deltaTheta+=correctionAngle;//without correctionAngle it goes to 0 degrees facing the wrong way, correctionAngle turns it back forwards
+      
       
     }
     
     else if(angle1 > angle2) {
-      deltaTheta = 210-((angle1+angle2)/2);
-    }
-    
-    turnAngle = deltaTheta + odo.getXYT()[2];
+      deltaTheta = 220-((angle1+angle2)/2);
 
+    }
+    //add change in angle needed to current angle
+    turnAngle = deltaTheta + odometer.getXYT()[2];
+
+    //rotate accordingly
     leftMotor.rotate(convertAngle(WHEEL_RAD, TRACK, turnAngle), true);
     rightMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, turnAngle), false);
 
@@ -326,16 +195,14 @@ public class UltrasonicLocalizer implements Runnable {
 
   @Override
   public void run() {
+    //get localization type from constructor and run method accordingly
     if (locType == LocalizationType.FALLING_EDGE) {
       fallingEdge();
     }
     else {
       
       risingEdge();
-    }
-    
-    // TODO Auto-generated method stub
-    
+    }    
   
   }
 }

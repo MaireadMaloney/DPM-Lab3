@@ -9,6 +9,7 @@ import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.robotics.SampleProvider;
 import static ca.mcgill.ecse211.lab4.Resources.*;
+import ca.mcgill.ecse211.lab4.UltrasonicLocalizer.LocalizationType;
 
 
 
@@ -58,14 +59,14 @@ public class Main {
       navigatorThread.start();
       
       //instantiate localizer with selected type and start thread
-      usl = new UltrasonicLocalizer(odometer, navigator, US_SENSOR, UltrasonicLocalizer.LocalizationType.FALLING_EDGE); 
+      usl = new UltrasonicLocalizer(LocalizationType.FALLING_EDGE); 
       Thread uslThread = new Thread(usl);
       uslThread.start();
       
       
       Button.waitForAnyPress();
       
-      LightLocalizer2 lsl = new LightLocalizer2();
+      lsl = new LightLocalizer2();
       Thread lslThread = new Thread(lsl);
       lslThread.start();
       
@@ -77,23 +78,20 @@ public class Main {
     } else { // Rising edge has been selected 
       LCD.clear();
 
-      // Declaring ultrasonic and controller variables.
-      //new Thread(new UltrasonicPoller()).start();
-
-      //localizer instance, rising edge
-      //usl.doLocalization();
+      //display thread
       Thread odoDisplayThread = new Thread(odometryDisplay);
       odoDisplayThread.start();
-   // Start ultrasonic thread.
-      
 
       // Start odometer thread.
       Thread odoThread = new Thread(odometer);
       odoThread.start();
-    //new Thread(new UltrasonicPoller()).start();
+      
+      //start navigator thread
       navigator.start();
       
-      usl = new UltrasonicLocalizer(odometer, navigator, US_SENSOR, UltrasonicLocalizer.LocalizationType.RISING_EDGE);
+      
+      //instantiate us localizer with selected type
+      usl = new UltrasonicLocalizer(LocalizationType.RISING_EDGE);
       
       Thread uslThread = new Thread(usl);
       uslThread.start();
@@ -101,6 +99,8 @@ public class Main {
       Button.waitForAnyPress();
       // perform the light sensor localization
       lsl = new LightLocalizer2();
+      Thread lslThread = new Thread(lsl);
+      lslThread.start();
       
 
     }

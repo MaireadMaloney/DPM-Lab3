@@ -15,6 +15,7 @@ import ca.mcgill.ecse211.lab4.UltrasonicLocalizer.LocalizationType;
 
 public class Main {
 
+  //define constants
   public static final TextLCD lcd = LocalEV3.get().getTextLCD();
   public static UltrasonicLocalizer usl;
   public static LightLocalizer2 lsl;
@@ -66,10 +67,12 @@ public class Main {
       
       Button.waitForAnyPress();
       
+      //initiate light localizer and start thread
       lsl = new LightLocalizer2();
       Thread lslThread = new Thread(lsl);
       lslThread.start();
       
+      //exit program
       Button.waitForAnyPress();
       System.exit(0);
 
@@ -104,7 +107,8 @@ public class Main {
       
 
     }
-
+    
+    //exit program
     while (Button.waitForAnyPress() != Button.ID_ESCAPE);
     System.exit(0);
 

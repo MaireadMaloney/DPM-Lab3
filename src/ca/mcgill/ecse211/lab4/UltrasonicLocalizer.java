@@ -1,34 +1,22 @@
 package ca.mcgill.ecse211.lab4;
-import ca.mcgill.ecse211.lab4.UltrasonicController;
-import ca.mcgill.ecse211.lab4.Odometer;
-import ca.mcgill.ecse211.lab4.UltrasonicPoller;
+
 import static ca.mcgill.ecse211.lab4.Resources.*;
 import lejos.hardware.*;
-import lejos.hardware.sensor.EV3UltrasonicSensor;
 
 
 public class UltrasonicLocalizer implements Runnable {
-  
 
-  private static final int WALL_THRESHOLD = 40;
-  private static final int FAR_PING_THRESHOLD = 3;
+  //correction angle for when robot is facing the wrong way
   private int correctionAngle=168;
   
+  //array to collect ultrasonic sensor data
   private float[] usData = new float[US_SENSOR.sampleSize()];
   private static LocalizationType locType;
 
-
+  
+//ultrasonic localizer constructor
   public UltrasonicLocalizer(LocalizationType localType) {
     locType = localType;
-    // TODO Auto-generated constructor stub
-  }
-
-
-
-
-  public static double getAngleDiff(double a, double b) {
-      // Convert to vectors and use dot product to compute angle in between
-      return Math.abs(Math.acos(Math.cos(a) * Math.cos(b) + Math.sin(a) * Math.sin(b)));
   }
 
   
@@ -38,12 +26,13 @@ public class UltrasonicLocalizer implements Runnable {
     return distanceFound;
   }
 
+  //enumeration with options for localization type
   public static enum LocalizationType {
       FALLING_EDGE, RISING_EDGE
   }
   
   /**
-   * This method allows the conversion of a distance to the total rotation of each wheel need to cover that distance.
+   * This method allows the conversion of a distance to the total rotation of each wheel need to cover that distance. (from lab 3)
    * 
    * @param radius
    * @param distance
@@ -53,11 +42,21 @@ public class UltrasonicLocalizer implements Runnable {
     return (int) ((180.0 * distance) / (Math.PI * radius));
   }
 
+  /**
+   * This method allows the conversion of an to the total rotation of each wheel need to cover to rotate that much. (from lab 3)
+   * 
+   * @param radius
+   * @param distance
+   * @return
+   */
   private static int convertAngle(double radius, double width, double angle) {
     return convertDistance(radius, Math.PI * width * angle / 360.0);
   }
+  
   /**
    * Falling Edge method
+   * @param
+   * @return
    */
   private void fallingEdge() {
     double angle1;
@@ -175,8 +174,6 @@ public class UltrasonicLocalizer implements Runnable {
     if(angle1 < angle2) {
       deltaTheta = 45-((angle1+angle2)/2);
       deltaTheta+=correctionAngle;//without correctionAngle it goes to 0 degrees facing the wrong way, correctionAngle turns it back forwards
-      
-      
     }
     
     else if(angle1 > angle2) {

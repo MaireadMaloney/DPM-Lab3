@@ -108,7 +108,7 @@ public class Main {
 
       Button.waitForAnyPress();
       // perform the light sensor localization
-      lsl = new LightLocalizer2(odo, navigator, colorSensor);
+      lsl = new LightLocalizer2();
       //lsl.doLocalization();
       // Start display thread.
       //Thread odoDisplayThread = new Thread(odometryDisplay);

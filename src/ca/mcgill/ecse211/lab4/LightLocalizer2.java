@@ -59,9 +59,26 @@ public class LightLocalizer2 implements Runnable{
         
       }
     }
+    int lineCounter= 0;
     
-
+    rightMotor.setSpeed(FORWARD_SPEED);
+    rightMotor.forward();
     
+    while(lineCounter!=5) {
+      colorSensor.getRedMode().fetchSample(sampleData, 0);
+      brightness = sampleData[0]*100;
+      if(brightness<26.00) {
+        lineCounter++;
+        try {
+          Thread.sleep(400);
+        } catch (InterruptedException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
+      }
+    }   
+    //rightMotor.(-convertAngle(WHEEL_RAD, TRACK, 0), false);
+    rightMotor.stop();
   }
 
   

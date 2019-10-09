@@ -248,12 +248,12 @@ public class UltrasonicLocalizer implements Runnable {
 
     
     if(angle1 < angle2) {
-      deltaTheta = 35-((angle1+angle2)/2);
+      deltaTheta = 30-((angle1+angle2)/2);
       
     }
     
     else if(angle1 > angle2) {
-      deltaTheta = 215-((angle1+angle2)/2);
+      deltaTheta = 210-((angle1+angle2)/2);
     }
     
     deltaTheta+=odo.getXYT()[2];
@@ -308,12 +308,12 @@ public class UltrasonicLocalizer implements Runnable {
     
     
     if(angle1 < angle2) {
-      deltaTheta = 35-((angle1+angle2)/2);
+      deltaTheta = 30-((angle1+angle2)/2);
       
     }
     
     else if(angle1 > angle2) {
-      deltaTheta = 215-((angle1+angle2)/2);
+      deltaTheta = 210-((angle1+angle2)/2);
     }
     
     turnAngle = deltaTheta + odo.getXYT()[2];

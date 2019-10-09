@@ -181,11 +181,11 @@ public class UltrasonicLocalizer implements Runnable {
 //      return distance;
 //  }
   
-private int fetchUSData() {
-US_SENSOR.fetchSample(usData, 0);
-int distanceFound = (int) (usData[0]*100);
-return distanceFound;
-}
+  private int fetchUSData() {
+    US_SENSOR.fetchSample(usData, 0);
+    int distanceFound = (int) (usData[0]*100);
+    return distanceFound;
+  }
 
   public static enum LocalizationType {
       FALLING_EDGE, RISING_EDGE

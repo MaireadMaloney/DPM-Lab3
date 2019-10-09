@@ -113,8 +113,9 @@ public class Resources {
    * The odometer.
    */
   public static Odometer odometer = Odometer.getOdometer();
-  //public static Navigation navigator = Navigation.getNavigation();
+  
   public static Navigation navigator = new Navigation(odometer, leftMotor, rightMotor, WHEEL_RAD, TRACK, TILE_SIZE);
+  
 
 
 }

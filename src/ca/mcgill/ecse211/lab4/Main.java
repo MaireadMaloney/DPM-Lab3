@@ -14,29 +14,18 @@ import static ca.mcgill.ecse211.lab4.Resources.*;
 
 public class Main {
 
-  // ultrasonic sensor instance from resources.
-  //public static final SampleProvider usDistance = US_SENSOR.getMode("Distance");
-  //public static final float[] usData = new float[usDistance.sampleSize()];
-
-  // Minimum distance to send to poller.
-  private static EV3ColorSensor colorSensor = Resources.colorSensor;  //private SampleProvider intensityVal = colorSensor.getRedMode();
-  public static final double MIN_DISTANCE = 14.0;
   public static final TextLCD lcd = LocalEV3.get().getTextLCD();
-  //private static Odometer odo;
-  //private static Navigation navig;
   public static UltrasonicLocalizer usl;
   public static LightLocalizer2 lsl;
   private static Navigation navigator = Resources.navigator;
+  private static Odometer odometer = Resources.odometer;
 
 
   public static void main(String[] args) {
     int buttonChoice;
-    Odometer odo = new Odometer();
     
     Display odometryDisplay = new Display(lcd); // No need to change.
 
-  
-     
     do {
       // Clear the display.
       lcd.clear();
@@ -50,26 +39,29 @@ public class Main {
 
       buttonChoice = Button.waitForAnyPress(); // Record the user's choice (left or right press).
     }
-
+    
     while (buttonChoice != Button.ID_LEFT && buttonChoice != Button.ID_RIGHT);
 
     if (buttonChoice == Button.ID_LEFT) { // Falling edge has been selected.
       lcd.clear();
-   // Declaring ultrasonic and controller variables.
  
       // Start odometer thread.
-      Thread odoThread = new Thread(odo);
+      Thread odoThread = new Thread(odometer);
       odoThread.start();
+      
+      //start display thread
       Thread odoDisplayThread = new Thread(odometryDisplay);
       odoDisplayThread.start();
       
-      //new Thread(new UltrasonicPoller()).start();
+      //start navigator thread
       Thread navigatorThread = new Thread(navigator);
       navigatorThread.start();
       
-      usl = new UltrasonicLocalizer(odo, navigator, US_SENSOR, UltrasonicLocalizer.LocalizationType.FALLING_EDGE); 
+      //instantiate localizer with selected type and start thread
+      usl = new UltrasonicLocalizer(odometer, navigator, US_SENSOR, UltrasonicLocalizer.LocalizationType.FALLING_EDGE); 
       Thread uslThread = new Thread(usl);
       uslThread.start();
+      
       
       Button.waitForAnyPress();
       
@@ -96,12 +88,12 @@ public class Main {
       
 
       // Start odometer thread.
-      Thread odoThread = new Thread(odo);
+      Thread odoThread = new Thread(odometer);
       odoThread.start();
     //new Thread(new UltrasonicPoller()).start();
       navigator.start();
       
-      usl = new UltrasonicLocalizer(odo, navigator, US_SENSOR, UltrasonicLocalizer.LocalizationType.RISING_EDGE);
+      usl = new UltrasonicLocalizer(odometer, navigator, US_SENSOR, UltrasonicLocalizer.LocalizationType.RISING_EDGE);
       
       Thread uslThread = new Thread(usl);
       uslThread.start();
@@ -109,18 +101,7 @@ public class Main {
       Button.waitForAnyPress();
       // perform the light sensor localization
       lsl = new LightLocalizer2();
-      //lsl.doLocalization();
-      // Start display thread.
-      //Thread odoDisplayThread = new Thread(odometryDisplay);
-      //odoDisplayThread.start();
-      //
       
-
-      // Set up navigation points.
- 
-
-
-      // Start navigation thread.
 
     }
 

@@ -305,7 +305,7 @@ public class UltrasonicLocalizer implements Runnable {
     
     angle2 = odo.getXYT()[2];
     Sound.beep();
-
+    
     
     if(angle1 < angle2) {
       deltaTheta = 35-((angle1+angle2)/2);
@@ -316,11 +316,10 @@ public class UltrasonicLocalizer implements Runnable {
       deltaTheta = 215-((angle1+angle2)/2);
     }
     
-    deltaTheta+=odo.getXYT()[2];
-    
+    turnAngle = deltaTheta + odo.getXYT()[2];
 
-    leftMotor.rotate(convertAngle(WHEEL_RAD, TRACK, deltaTheta), true);
-    rightMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, deltaTheta), false);
+    leftMotor.rotate(convertAngle(WHEEL_RAD, TRACK, turnAngle), true);
+    rightMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, turnAngle), false);
 
   }
 

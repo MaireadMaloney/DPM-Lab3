@@ -42,10 +42,13 @@ public class LightLocalizer2 implements Runnable{
     while(lineNotReached) {
       System.out.println("entered loop");
       colorSensor.getRedMode().fetchSample(sampleData, 0);
-      brightness = sampleData[0];
+      brightness = sampleData[0]*100;
       
+      leftMotor.setSpeed(FORWARD_SPEED);
+      rightMotor.setSpeed(FORWARD_SPEED);
       leftMotor.forward();
       rightMotor.forward();
+      
       
       
       if(brightness<26.00) {

@@ -14,7 +14,7 @@ public class LightLocalizer2 implements Runnable{
   private Odometer odometer = Resources.odometer;
   private Navigation navigator = Resources.navigator;
   private EV3ColorSensor colorSensor = Resources.colorSensor;
-
+  private boolean lineNotReached = true;
  
   
 //
@@ -38,17 +38,19 @@ public class LightLocalizer2 implements Runnable{
     int angle = 45;
     leftMotor.rotate(convertAngle(WHEEL_RAD, TRACK, angle), true);
     rightMotor.rotate(-convertAngle(WHEEL_RAD, TRACK, angle), false);
-    
-    boolean lineReached = false;
-    
-    while(!lineReached) {
-      leftMotor.forward();
-      rightMotor.forward();
+        
+    while(lineNotReached) {
+      System.out.println("entered loop");
       colorSensor.getRedMode().fetchSample(sampleData, 0);
       brightness = sampleData[0];
       
+      leftMotor.forward();
+      rightMotor.forward();
+      
+      
       if(brightness<26.00) {
-        lineReached = true;
+        System.out.println("reached line");
+        lineNotReached = false;
         leftMotor.stop();
         rightMotor.stop();
         
